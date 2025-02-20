@@ -2,15 +2,11 @@ import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# 🔹 قبل از اجرای پروژه در ویندوز، این دستورات را در CMD اجرا کن:
-# set TOKEN=توکن_ربات_اینجا
-# set CHANNEL_ID=@netrobin
-
-# دریافت مقادیر از متغیرهای محیطی
+# دریافت اطلاعات از متغیرهای محیطی
 TOKEN = os.getenv("TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 
-# بررسی اینکه مقادیر به درستی دریافت شده‌اند
 if not TOKEN or not CHANNEL_ID:
     raise ValueError("❌ خطا: مقادیر TOKEN و CHANNEL_ID تنظیم نشده‌اند!")
 
@@ -22,37 +18,36 @@ reactions = {}
 # مدیریت ارسال عکس، ویدیو، PDF و MP3
 @bot.message_handler(content_types=['photo', 'video', 'document', 'audio'])
 def handle_media(message):
-    caption = message.caption if message.caption else ''
+    if message.from_user.id != ADMIN_ID:
+        bot.reply_to(message, "❌ شما اجازه ارسال فایل به کانال را ندارید.")
+        return
     
+    caption = message.caption if message.caption else ''
     markup = InlineKeyboardMarkup()
     like_button = InlineKeyboardButton('👍 0', callback_data='like')
     dislike_button = InlineKeyboardButton('👎 0', callback_data='dislike')
     markup.add(like_button, dislike_button)
-
+    
+    file_id = None
+    
     if message.content_type == 'photo':
         file_id = message.photo[-1].file_id
         bot.send_photo(CHANNEL_ID, file_id, caption=caption, reply_markup=markup)
-
     elif message.content_type == 'video':
         file_id = message.video.file_id
         bot.send_video(CHANNEL_ID, file_id, caption=caption, reply_markup=markup)
-
     elif message.content_type == 'document' and message.document.mime_type == 'application/pdf':
         file_id = message.document.file_id
         bot.send_document(CHANNEL_ID, file_id, caption=caption, reply_markup=markup)
-
     elif message.content_type == 'audio':
         file_id = message.audio.file_id
         bot.send_audio(CHANNEL_ID, file_id, caption=caption, reply_markup=markup)
 
 # مدیریت ارسال متن
 @bot.message_handler(content_types=['text'])
-ADMIN_ID = int(os.getenv("ADMIN_ID"))  # آیدی خودتان را جایگزین کنید
-
-@bot.message_handler(content_types=['text'])
 def handle_text(message):
-    if message.from_user.id == ADMIN_ID:  # بررسی اگر پیام از شما باشد
-        bot.send_message(channel_id, message.text)
+    if message.from_user.id == ADMIN_ID:
+        bot.send_message(CHANNEL_ID, message.text)
     else:
         bot.reply_to(message, "❌ شما اجازه ارسال پیام به کانال را ندارید.")
 
