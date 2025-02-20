@@ -47,8 +47,14 @@ def handle_media(message):
 
 # مدیریت ارسال متن
 @bot.message_handler(content_types=['text'])
+ADMIN_ID = int(os.getenv("ADMIN_ID"))  # آیدی خودتان را جایگزین کنید
+
+@bot.message_handler(content_types=['text'])
 def handle_text(message):
-    bot.send_message(CHANNEL_ID, message.text)
+    if message.from_user.id == ADMIN_ID:  # بررسی اگر پیام از شما باشد
+        bot.send_message(channel_id, message.text)
+    else:
+        bot.reply_to(message, "❌ شما اجازه ارسال پیام به کانال را ندارید.")
 
 # مدیریت کلیک روی دکمه‌ها
 @bot.callback_query_handler(func=lambda call: True)
